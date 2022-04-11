@@ -133,6 +133,7 @@ public:
 	Geometry coin08;
 	Geometry coin09;
 	Geometry coin10;
+	int coins_collected = 0;
 
 
 
@@ -608,46 +609,8 @@ public:
 		ramp06->gMin = trans * scale * rot * vec4(ramp06->gMin, 1.0f);
 	}
 
-	void initGeom(const std::string& resourceDirectory)
+	void initCoins(const std::string& resourceDirectory)
 	{
-		//EXAMPLE set up to read one shape from one obj file - convert to read several
-		// Initialize mesh
-		// Load geometry
-
-		// cube
-		string errStr;
-		vector<tinyobj::shape_t> TOshapesC;
-		vector<tinyobj::material_t> objMaterialsC;
-		//load in the mesh and make the shape(s)
-		bool rc = tinyobj::LoadObj(TOshapesC, objMaterialsC, errStr, (resourceDirectory + "/cube.obj").c_str());
-		if (!rc) {
-			cerr << errStr << endl;
-		}
-		else {
-			cube = make_shared<Shape>();
-			cube->createShape(TOshapesC[0]);
-			cube->measure();
-			cube->init();
-		}
-
-		palmtree01 = createEntity(resourceDirectory, "palmtree01.obj");
-		ramp01 = createEntity(resourceDirectory, "ramp01.obj");
-		setBoundingBoxRamp01(&ramp01);
-		ramp02 = createEntity(resourceDirectory, "ramp01.obj");
-		setBoundingBoxRamp02(&ramp02);
-		ramp03 = createEntity(resourceDirectory, "ramp01.obj");
-		setBoundingBoxRamp03(&ramp03);
-		ramp04 = createEntity(resourceDirectory, "ramp02.obj");
-		setBoundingBoxRamp04(&ramp04);
-		ramp05 = createEntity(resourceDirectory, "ramp05.obj");
-		setBoundingBoxRamp05(&ramp05);
-		ramp06 = createEntity(resourceDirectory, "ramp03.obj");
-		setBoundingBoxRamp06(&ramp06);
-		skate_left = createEntity(resourceDirectory, "rollerSkateLeftFoot.obj");
-		skate_right = createEntity(resourceDirectory, "rollerSkateRightFoot.obj");
-		dummy = createEntity(resourceDirectory, "dummy.obj");
-		dummy.radius = 1;
-
 		coins[1] = createEntity(resourceDirectory, "dogeCoin.obj");
 		coins[1].pos = glm::vec3(-13, 0.5, 19);
 		coins[1].orientation = glm::vec3(0, 1, 0);
@@ -691,7 +654,7 @@ public:
 		coins[9] = createEntity(resourceDirectory, "dogeCoin.obj");
 		coins[9].pos = glm::vec3(5, 0.5, -15);
 		coins[9].orientation = glm::vec3(0, 0, 1);
-		coins[9].velocity = glm::vec3(0, 0, 0.05); 
+		coins[9].velocity = glm::vec3(0, 0, 0.05);
 
 		coins[10] = createEntity(resourceDirectory, "dogeCoin.obj");
 		coins[10].pos = glm::vec3(0, 0.5, -6);
@@ -699,7 +662,50 @@ public:
 		coins[10].velocity = glm::vec3(0, 0, 0.05);
 
 		for (int i = 1; i <= NUM_COINS; i++)
-			coins[i].radius = 0.75;
+			coins[i].radius = 1.0;
+	}
+
+	void initGeom(const std::string& resourceDirectory)
+	{
+		//EXAMPLE set up to read one shape from one obj file - convert to read several
+		// Initialize mesh
+		// Load geometry
+
+		// cube
+		string errStr;
+		vector<tinyobj::shape_t> TOshapesC;
+		vector<tinyobj::material_t> objMaterialsC;
+		//load in the mesh and make the shape(s)
+		bool rc = tinyobj::LoadObj(TOshapesC, objMaterialsC, errStr, (resourceDirectory + "/cube.obj").c_str());
+		if (!rc) {
+			cerr << errStr << endl;
+		}
+		else {
+			cube = make_shared<Shape>();
+			cube->createShape(TOshapesC[0]);
+			cube->measure();
+			cube->init();
+		}
+
+		palmtree01 = createEntity(resourceDirectory, "palmtree01.obj");
+		ramp01 = createEntity(resourceDirectory, "ramp01.obj");
+		setBoundingBoxRamp01(&ramp01);
+		ramp02 = createEntity(resourceDirectory, "ramp01.obj");
+		setBoundingBoxRamp02(&ramp02);
+		ramp03 = createEntity(resourceDirectory, "ramp01.obj");
+		setBoundingBoxRamp03(&ramp03);
+		ramp04 = createEntity(resourceDirectory, "ramp02.obj");
+		setBoundingBoxRamp04(&ramp04);
+		ramp05 = createEntity(resourceDirectory, "ramp05.obj");
+		setBoundingBoxRamp05(&ramp05);
+		ramp06 = createEntity(resourceDirectory, "ramp03.obj");
+		setBoundingBoxRamp06(&ramp06);
+		skate_left = createEntity(resourceDirectory, "rollerSkateLeftFoot.obj");
+		skate_right = createEntity(resourceDirectory, "rollerSkateRightFoot.obj");
+		dummy = createEntity(resourceDirectory, "dummy.obj");
+		dummy.radius = 1;
+
+		initCoins(resourceDirectory);
 
 		//camera
 		camera.setEye(vec3(0, 0, 0));
@@ -1775,7 +1781,7 @@ public:
 			return false;
 	}
 
-	void drawCoins(shared_ptr<Program> curS, shared_ptr<MatrixStack> Projection, shared_ptr<MatrixStack> V, shared_ptr<MatrixStack> Model)
+	void drawCoins(shared_ptr<Program> curS, shared_ptr<MatrixStack> Projection, shared_ptr<MatrixStack> V, shared_ptr<MatrixStack> Model, const std::string& resourceDirectory)
 	{
 		prog->bind();
 		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
@@ -1790,8 +1796,20 @@ public:
 		{
 			if (isCoinCollision(&dummy, &coins[i]))
 			{
-				bool played_coin = PlaySound("coinSound.wav", NULL, SND_ASYNC);
+				//bool played_coin = PlaySound("coinSound.wav", NULL, SND_ASYNC);
 				coins.erase(i);
+				coins_collected++;
+				if (coins_collected == NUM_COINS)
+				{
+					cout << "\nAll coins collected!\n" << endl;
+					coins_collected = 0;
+					initCoins(resourceDirectory);
+				}
+				else
+				{
+					cout << coins_collected << " coins collected!" << endl;
+					cout << NUM_COINS - coins_collected << " coins left to collect!" << endl;
+				}
 			}
 		}
 
@@ -1927,7 +1945,7 @@ public:
 		prog->unbind();
 	}
 
-	void render(float frametime) {
+	void render(float frametime, const std::string& resourceDirectory) {
 		// Get current frame buffer size.
 		int width, height;
 		glfwGetFramebufferSize(windowManager->getHandle(), &width, &height);
@@ -2018,7 +2036,7 @@ public:
 		drawRink(texProg, Projection);
 
 		// Draw coins
-		drawCoins(prog, Projection, V, Model);
+		drawCoins(prog, Projection, V, Model, resourceDirectory);
 
 		// Pop matrix stacks.
 		Projection->popMatrix();
@@ -2031,7 +2049,7 @@ int main(int argc, char *argv[])
 	std::string resourceDir = "../resources";
 
 	// This is to play sound. Commented out so application can run on iOS
-	//bool played = PlaySound("CanYouFeelTheForce.wav", NULL, SND_ASYNC);
+	bool played = PlaySound("CanYouFeelTheForce.wav", NULL, SND_FILENAME | SND_ASYNC);
 
 	if (argc >= 2)
 	{
@@ -2056,6 +2074,7 @@ int main(int argc, char *argv[])
 	application->cubeMapTexture = application->createSky("../resources/cracks/", application->faces);
 
 	auto lastTime = chrono::high_resolution_clock::now();
+	cout << "\nCollect the coins!\n" << endl;
 	// Loop until the user closes the window.
 	while (! glfwWindowShouldClose(windowManager->getHandle()))
 	{
@@ -2075,7 +2094,7 @@ int main(int argc, char *argv[])
 		lastTime = nextLastTime;
 
 		// Render scene.
-		application->render(deltaTime);
+		application->render(deltaTime, resourceDir);
 		// Swap front and back buffers.
 		glfwSwapBuffers(windowManager->getHandle());
 		// Poll for and process events.
