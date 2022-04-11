@@ -41,6 +41,7 @@ Geometry::Geometry() {
    orientation = glm::vec3(0);
    velocity = glm::vec3(0);
    direction_flag = 1.0f;
+   radius = 0;
    //x_maxExtent = 0;
    //y_maxExtent = 0;
    //z_maxExtent = 0;

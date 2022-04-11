@@ -646,6 +646,7 @@ public:
 		skate_left = createEntity(resourceDirectory, "rollerSkateLeftFoot.obj");
 		skate_right = createEntity(resourceDirectory, "rollerSkateRightFoot.obj");
 		dummy = createEntity(resourceDirectory, "dummy.obj");
+		dummy.radius = 1;
 
 		coins[1] = createEntity(resourceDirectory, "dogeCoin.obj");
 		coins[1].pos = glm::vec3(-13, 0.5, 19);
@@ -696,6 +697,9 @@ public:
 		coins[10].pos = glm::vec3(0, 0.5, -6);
 		coins[10].orientation = glm::vec3(0, 0, -1);
 		coins[10].velocity = glm::vec3(0, 0, 0.05);
+
+		for (int i = 1; i <= NUM_COINS; i++)
+			coins[i].radius = 0.75;
 
 		//camera
 		camera.setEye(vec3(0, 0, 0));
@@ -1752,7 +1756,23 @@ public:
 
 	bool isCoinCollision(Geometry* dummy, Geometry* coin)
 	{
-		return (dummy->pos.x - 1.5 < coin->gMin.x && dummy->pos.x + 1.5 > coin->gMax.x) && (dummy->pos.z - 1.5 < coin->gMin.z && dummy->pos.z + 1.5 > coin->gMax.z);
+		float dummy_rad_sq = dummy->radius * dummy->radius;
+		float coin_rad_sq = coin->radius * coin->radius;
+
+		float distX = dummy->pos.x - coin->pos.x;
+		float distY = dummy->pos.y - coin->pos.y;
+		float distZ = dummy->pos.z - coin->pos.z;
+
+		distX *= distX;
+		distY *= distY;
+		distZ *= distZ;
+
+		float sqrDist = distX + distY + distZ;
+
+		if ((dummy_rad_sq + coin_rad_sq) > sqrDist)
+			return true;
+		else
+			return false;
 	}
 
 	void drawCoins(shared_ptr<Program> curS, shared_ptr<MatrixStack> Projection, shared_ptr<MatrixStack> V, shared_ptr<MatrixStack> Model)

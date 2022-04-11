@@ -29,6 +29,7 @@ public:
    glm::vec3 orientation;
    glm::vec3 velocity;
    float direction_flag;
+   float radius;
    //float x_maxExtent;
    //float y_maxExtent;
    //float z_maxExtent;
