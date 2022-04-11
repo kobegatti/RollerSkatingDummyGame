@@ -19,6 +19,7 @@
 #include "Camera.h"
 #include <chrono>
 #include "Geometry.h"
+#include <unordered_set>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader/tiny_obj_loader.h>
@@ -79,6 +80,10 @@
 #define ULAR2 10
 #define LLAR1 11
 
+// Coins Data
+#define NUM_COINS 10
+#define MAX_COIN_HEIGHT 2
+
 // value_ptr for glm
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -118,6 +123,21 @@ public:
 	Geometry skate_left;
 	Geometry skate_right;
 	Geometry dummy;
+	Geometry coin01;
+	Geometry coin02;
+	Geometry coin03;
+	Geometry coin04;
+	Geometry coin05;
+	Geometry coin06;
+	Geometry coin07;
+	Geometry coin08;
+	Geometry coin09;
+	Geometry coin10;
+
+
+
+	//Game object collection
+	std::map<int, Geometry> coins;
 
 	shared_ptr<Shape> mesh;
 
@@ -162,9 +182,12 @@ public:
 	float offsets[168];
 
 	//animation data
-	float speed = 0.055;
+	float speed = 0.135;
 	float t = 0.0f;
-	float interpolate = 0.025;
+	float time = 0.0f;
+	float direction_flag01 = 1.0f;
+	float direction_flag02 = 1.0f;
+	float interpolate = 0.055;
 	bool forward = false;
 	bool backward = false;
 	bool left = false;
@@ -626,6 +649,42 @@ public:
 		skate_left = createEntity(resourceDirectory, "rollerSkateLeftFoot.obj");
 		skate_right = createEntity(resourceDirectory, "rollerSkateRightFoot.obj");
 		dummy = createEntity(resourceDirectory, "dummy.obj");
+		//coin01 = createEntity(resourceDirectory, "dogeCoin.obj");
+
+		coins[1] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[1].pos = glm::vec3(0, 0.5, -6);
+		coins[1].orientation = glm::vec3(0, 0, -1);
+		coins[1].velocity = glm::vec3(0, 0, 0.05);
+
+		coins[2] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[2].pos = glm::vec3(-10, 0.5, -16);
+		coins[2].orientation = glm::vec3(0, 1, 0);
+		coins[2].velocity = glm::vec3(0, 0.03, 0);
+
+		coins[3] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[3].pos = glm::vec3(-16, 0.5, 5);
+		coins[3].orientation = glm::vec3(0, 1, 0);
+		coins[3].velocity = glm::vec3(0, 0.03, 0);
+
+		coins[4] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[4].pos = glm::vec3(16, 0.5, -8);
+		coins[4].orientation = glm::vec3(0, 1, 0);
+		coins[4].velocity = glm::vec3(0, 0.03, 0);
+
+		coins[5] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[5].pos = glm::vec3(13, 0.5, 17);
+		coins[5].orientation = glm::vec3(0, 1, 0);
+		coins[5].velocity = glm::vec3(0, 0.03, 0);
+
+		coins[6] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[6].pos = glm::vec3(5, 0.5, 5);
+		coins[6].orientation = glm::vec3(0, 1, 0);
+		coins[6].velocity = glm::vec3(0, 0.03, 0);
+
+		coins[7] = createEntity(resourceDirectory, "dogeCoin.obj");
+		coins[7].pos = glm::vec3(-18, 0.5, 12);
+		coins[7].orientation = glm::vec3(1, 0, 0);
+		coins[7].velocity = glm::vec3(-1, 0, 0);
 
 		//camera
 		camera.setEye(vec3(0, 0, 0));
@@ -1642,6 +1701,123 @@ public:
 		prog->unbind();
 	}
 
+	glm::vec3 updateCoinPosHorizontal(Geometry coin)
+	{
+		glm::vec3 new_pos = coin.pos;
+
+		float move = glm::dot(coin.orientation, coin.velocity);
+		if ((coin.pos.x > GROUND_SIZE || coin.pos.x < -GROUND_SIZE) || (coin.pos.z > GROUND_SIZE || coin.pos.z < -GROUND_SIZE))
+		{
+			direction_flag01 *= -1;
+			new_pos.x += direction_flag01 * move;
+			new_pos.z += direction_flag01 * move;
+		}
+		else
+		{
+			new_pos.x += direction_flag01 * move;
+			new_pos.z += direction_flag01 * move;
+		}
+		
+		return new_pos;
+	}
+
+	Geometry updateCoinPosVertical(Geometry coin)
+	{
+		Geometry new_coin = coin;
+		glm::vec3 new_pos = coin.pos;
+
+		float move = glm::dot(coin.orientation, coin.velocity);
+		if (new_coin.pos.y < 0.5 || new_coin.pos.y > MAX_COIN_HEIGHT)
+		{
+			new_coin.direction_flag *= -1;
+			new_coin.pos.y += new_coin.direction_flag * move;
+		}
+		else
+		{
+			new_coin.pos.y += new_coin.direction_flag * move;
+		}
+
+		return new_coin;
+	}
+
+	void drawCoins(shared_ptr<Program> curS, shared_ptr<MatrixStack> Projection, shared_ptr<MatrixStack> V, shared_ptr<MatrixStack> Model)
+	{
+		prog->bind();
+		glUniformMatrix4fv(prog->getUniform("P"), 1, GL_FALSE, value_ptr(Projection->topMatrix()));
+		glUniformMatrix4fv(prog->getUniform("V"), 1, GL_FALSE, value_ptr(V->topMatrix()));
+		glUniform3f(prog->getUniform("lightPos"), light1_x, light1_y, light1_z);
+		glUniform3f(prog->getUniform("lightPos2"), light2_x, light2_y, light2_z);
+		glUniform3f(prog->getUniform("lightPos3"), light3_x, light3_y, light3_z);
+		glUniform3f(prog->getUniform("lightPos4"), light4_x, light4_y, light4_z);
+		glUniform3f(prog->getUniform("discoColor"), sin(glfwGetTime() * 1.3f), sin(glfwGetTime() * 2.0f), sin(glfwGetTime() * 0.7f));
+
+		// coins
+		// 1
+		Model->pushMatrix();
+		//cout << coins[1].pos.x << " " << coins[1].pos.y << " " << coins[1].pos.z << endl;
+		coins[1].pos = updateCoinPosHorizontal(coins[1]);
+		Model->translate(coins[1].pos);
+		Model->rotate(glm::pi<float>()/2, vec3(0.0, 1.0, 0.0));
+		Model->scale(0.5);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		coins[1].drawShapes(prog);
+		Model->popMatrix();
+
+		//2
+		Model->pushMatrix();
+		coins[2] = updateCoinPosVertical(coins[2]);
+		Model->translate(coins[2].pos);
+		Model->rotate(glm::pi<float>() / 2, vec3(0.0, 1.0, 0.0));
+		Model->scale(0.5);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		coins[2].drawShapes(prog);
+		Model->popMatrix();
+
+		//3
+		Model->pushMatrix();
+		coins[3] = updateCoinPosVertical(coins[3]);
+		Model->translate(coins[3].pos);
+		Model->rotate(glm::pi<float>() / 2, vec3(0.0, 1.0, 0.0));
+		Model->scale(0.5);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		coins[3].drawShapes(prog);
+		Model->popMatrix();
+
+		//4
+		Model->pushMatrix();
+		coins[4] = updateCoinPosVertical(coins[4]);
+		Model->translate(coins[4].pos);
+		Model->rotate(glm::pi<float>() / 2, vec3(0.0, 1.0, 0.0));
+		Model->scale(0.5);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		coins[4].drawShapes(prog);
+		Model->popMatrix();
+
+		//5
+		Model->pushMatrix();
+		coins[5] = updateCoinPosVertical(coins[5]);
+		Model->translate(coins[5].pos);
+		Model->rotate(glm::pi<float>() / 2, vec3(0.0, 1.0, 0.0));
+		Model->scale(0.5);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		coins[5].drawShapes(prog);
+		Model->popMatrix();
+
+		//6
+		Model->pushMatrix();
+		coins[6] = updateCoinPosVertical(coins[6]);
+		Model->translate(coins[6].pos);
+		Model->rotate(glm::pi<float>() / 2, vec3(0.0, 1.0, 0.0));
+		Model->scale(0.5);
+		glUniformMatrix4fv(prog->getUniform("M"), 1, GL_FALSE, value_ptr(Model->topMatrix()));
+		coins[6].drawShapes(prog);
+		Model->popMatrix();
+
+
+		prog->unbind();
+		time += interpolate;
+	}
+
    	void updateUsingCameraPath(float frametime)  {
    	  if (goCamera && g_count <= 0) {
        if(!splinepath[0].isDone()){
@@ -1833,6 +2009,9 @@ public:
 		// Draw the rink floor
 		drawRink(texProg, Projection);
 
+		// Draw coins
+		drawCoins(prog, Projection, V, Model);
+
 		// Pop matrix stacks.
 		Projection->popMatrix();
 	}
@@ -1844,7 +2023,7 @@ int main(int argc, char *argv[])
 	std::string resourceDir = "../resources";
 
 	// This is to play sound. Commented out so application can run on iOS
-	/*bool played = PlaySound("funkit.wav", NULL, SND_ASYNC);*/
+	//bool played = PlaySound("CanYouFeelTheForce.wav", NULL, SND_ASYNC);
 
 	if (argc >= 2)
 	{

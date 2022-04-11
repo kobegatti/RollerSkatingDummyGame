@@ -38,6 +38,9 @@ Geometry::Geometry() {
    gMax = glm::vec3(0);
    translate_to_origin = glm::vec3(0);
    pos = glm::vec3(0);
+   orientation = glm::vec3(0);
+   velocity = glm::vec3(0);
+   direction_flag = 1.0f;
    //x_maxExtent = 0;
    //y_maxExtent = 0;
    //z_maxExtent = 0;

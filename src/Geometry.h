@@ -26,6 +26,9 @@ public:
    glm::vec3 gMax;
    glm::vec3 translate_to_origin;
    glm::vec3 pos;
+   glm::vec3 orientation;
+   glm::vec3 velocity;
+   float direction_flag;
    //float x_maxExtent;
    //float y_maxExtent;
    //float z_maxExtent;
