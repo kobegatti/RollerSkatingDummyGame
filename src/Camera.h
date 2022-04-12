@@ -17,7 +17,7 @@ public:
 
 	glm::vec3 getLookAt();
 	void setLookAt(float x_pos, float y_pos, float z_pos);
-	void Camera::setLookAtWithVec(glm::vec3 updated_lookAt);
+	void setLookAtWithVec(glm::vec3 updated_lookAt);
 	void incrementLookAt(glm::vec3 add_on);
 
 	glm::vec3 getUp();
